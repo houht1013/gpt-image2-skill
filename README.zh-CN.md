@@ -88,9 +88,11 @@ node scripts/gpt-image2.mjs --help
 
 ### 第 2 步：配置一个图片渠道
 
+如果你想直接用一个 OpenAI 兼容网关来测试，可以参考 [OPCLab](https://api.opclab.vip)。
+
 ```bash
-node scripts/gpt-image2.mjs config set openai --api-key "你的key" --base-url "https://api.openai.com/v1" --model "gpt-image-2"
-node scripts/gpt-image2.mjs config use openai
+node scripts/gpt-image2.mjs config set opclab --api-key "你的key" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
+node scripts/gpt-image2.mjs config use opclab
 node scripts/gpt-image2.mjs config show
 ```
 
@@ -166,6 +168,12 @@ node scripts/gpt-image2.mjs sizes list --orientation portrait
 
 ```bash
 node scripts/gpt-image2.mjs config set openai --api-key "你的key" --base-url "https://api.openai.com/v1" --model "gpt-image-2"
+```
+
+也可以使用 [OPCLab](https://api.opclab.vip) 这样的 OpenAI 兼容网关：
+
+```bash
+node scripts/gpt-image2.mjs config set opclab --api-key "你的key" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
 ```
 
 切换当前渠道：
