@@ -1,3 +1,7 @@
+<p align="right">
+  <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
 # GPT Image 2 Skill
 
 A lightweight `gpt-image-2` skill and CLI for image generation/editing through OpenAI-compatible APIs.
@@ -38,6 +42,7 @@ This repository keeps the toolchain intentionally small:
 - `sizes list` for supported resolution lookup
 - `--dry-run` to inspect the final payload
 - `--curl` to print an equivalent curl command
+- batch multi-image generation with `--batch`, up to 8 images
 
 ## Installation
 
@@ -83,6 +88,7 @@ node scripts/gpt-image2.mjs templates show encyclopedia-card
 ```bash
 node scripts/gpt-image2.mjs sizes list
 node scripts/gpt-image2.mjs sizes list --orientation portrait
+node scripts/gpt-image2.mjs sizes list --common-only
 ```
 
 Supported values currently include:
@@ -91,6 +97,34 @@ Supported values currently include:
 - `1536x1024`
 - `1024x1536`
 - `auto`
+
+Under those native sizes, the CLI now also enumerates more practical native-compatible presets, such as:
+
+- `avatar-square`
+- `product-square`
+- `logo-square`
+- `cover-landscape`
+- `slide-landscape`
+- `scene-landscape`
+- `ui-landscape`
+- `poster-portrait`
+- `infographic-portrait`
+- `mobile-portrait`
+- `fashion-portrait`
+
+These are not extra API resolutions. They are named presets mapped onto the officially supported native sizes, so agents and users can choose a framing intention more quickly.
+
+The CLI now also prints mainstream target ratios for planning, including:
+
+- `16:9`
+- `9:16`
+- `4:3`
+- `3:4`
+- `4:5`
+- `5:4`
+- `21:9`
+
+These are shown as guidance ratios. They are not all native API sizes. For non-native ratios, the CLI recommends the nearest supported base size plus a crop/pad strategy.
 
 ### 3. Configure an API channel
 
@@ -117,6 +151,24 @@ node scripts/gpt-image2.mjs generate \
   --prompt "A cinematic red panda librarian floating through a glass observatory in the rain, whimsical, rich detail" \
   --size 1024x1024 \
   --output outputs/random-test.png
+```
+
+Generate multiple images in one request:
+
+```bash
+node scripts/gpt-image2.mjs generate \
+  --prompt "Minimalist tea packaging concept, premium, modern East Asian branding" \
+  --batch 4 \
+  --output outputs/tea-batch.png
+```
+
+The CLI will save them as:
+
+```text
+outputs/tea-batch-01.png
+outputs/tea-batch-02.png
+outputs/tea-batch-03.png
+outputs/tea-batch-04.png
 ```
 
 ### 5. Try a prompt template
@@ -169,7 +221,7 @@ gpt-image2 config use <channel>
 gpt-image2 config list
 gpt-image2 config show [channel]
 
-gpt-image2 sizes list [--orientation portrait|landscape|square|auto] [--json]
+gpt-image2 sizes list [--orientation portrait|landscape|square|auto] [--json] [--native-only] [--common-only]
 
 gpt-image2 templates list [--json]
 gpt-image2 templates search <query>
@@ -180,6 +232,16 @@ gpt-image2 generate --prompt <text> [--output file]
 gpt-image2 generate --template <id> [--var key=value] [--output file]
 gpt-image2 edit --image <file> --prompt <text> [--mask file] [--output file]
 ```
+
+Batch options:
+
+```bash
+--batch <1-8>
+--count <1-8>
+--n <1-8>
+```
+
+OpenAI's current image API documentation allows a higher upper bound for `n` in some cases, but this CLI intentionally caps batch generation at 8 images per request to keep outputs manageable in agent workflows and local file handling.
 
 ## Prompt Templates
 

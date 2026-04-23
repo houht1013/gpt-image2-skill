@@ -1,3 +1,7 @@
+<p align="right">
+  <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
 # GPT Image 2 Skill 中文说明
 
 这是一个轻量版 `gpt-image-2` Skill / CLI，目标是：
@@ -8,6 +12,7 @@
 - 支持提示词模板快速试用
 - 支持 `config` 命令管理多个 API 渠道
 - 支持查询可用分辨率
+- 支持批量多图生成，单次最多 8 张
 
 核心脚本：
 
@@ -116,6 +121,21 @@ node scripts/gpt-image2.mjs try encyclopedia-card --var topic=咖啡萃取 --dry
 node scripts/gpt-image2.mjs try encyclopedia-card --var topic=咖啡萃取 --output outputs/coffee-card.png
 ```
 
+### 第 5.1 步：批量生成多张图
+
+```bash
+node scripts/gpt-image2.mjs generate --prompt "新中式茶叶包装设计，极简，高级感" --batch 4 --output outputs/tea-batch.png
+```
+
+输出文件会自动保存为：
+
+```text
+outputs/tea-batch-01.png
+outputs/tea-batch-02.png
+outputs/tea-batch-03.png
+outputs/tea-batch-04.png
+```
+
 ### 第 6 步：需要时导出 curl
 
 ```bash
@@ -151,6 +171,7 @@ node scripts/gpt-image2.mjs templates search poster
 ```bash
 node scripts/gpt-image2.mjs sizes list
 node scripts/gpt-image2.mjs sizes list --orientation portrait
+node scripts/gpt-image2.mjs sizes list --common-only
 ```
 
 当前内置支持：
@@ -159,6 +180,34 @@ node scripts/gpt-image2.mjs sizes list --orientation portrait
 - `1536x1024`
 - `1024x1536`
 - `auto`
+
+在这些原生尺寸之上，CLI 现在还补充了一层更细的“原生兼容枚举 preset”，例如：
+
+- `avatar-square`
+- `product-square`
+- `logo-square`
+- `cover-landscape`
+- `slide-landscape`
+- `scene-landscape`
+- `ui-landscape`
+- `poster-portrait`
+- `infographic-portrait`
+- `mobile-portrait`
+- `fashion-portrait`
+
+这些并不是额外伪造出来的新分辨率，而是映射到官方原生尺寸上的命名预设，方便你或 agent 更快选择构图意图。
+
+同时 CLI 也会列出主流目标比例，方便做后续裁切或留白策略判断，例如：
+
+- `16:9`
+- `9:16`
+- `4:3`
+- `3:4`
+- `4:5`
+- `5:4`
+- `21:9`
+
+这些比例不代表都由 API 原生支持。对于非原生比例，CLI 会提示推荐先生成的基础尺寸，以及后续裁切/留白建议。
 
 ## 配置 API 渠道
 
@@ -305,6 +354,24 @@ node scripts/gpt-image2.mjs try encyclopedia-card --var topic=咖啡萃取 --out
 
 ```bash
 node scripts/gpt-image2.mjs generate --prompt "A quiet ceramic studio at sunrise, soft light, editorial photography" --size 1024x1024 --output outputs/studio.png
+```
+
+批量一次生成多张：
+
+```bash
+node scripts/gpt-image2.mjs generate --prompt "茶饮品牌 KV，现代东方，留白，高级感" --batch 4 --output outputs/brand-kv.png
+```
+
+也支持兼容 API 参数写法：
+
+```bash
+node scripts/gpt-image2.mjs generate --prompt "茶饮品牌 KV，现代东方，留白，高级感" --n 4 --output outputs/brand-kv.png
+```
+
+推荐优先使用：
+
+```bash
+--batch <1-8>
 ```
 
 使用模板生图：

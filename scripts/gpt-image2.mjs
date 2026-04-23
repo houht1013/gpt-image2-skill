@@ -13,12 +13,14 @@ const PROMPTS_PATH = path.join(ROOT, "references", "prompts.json");
 const DEFAULT_CONFIG_PATH = path.join(os.homedir(), ".gpt-image2", "config.json");
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-image-2";
+const MAX_BATCH_IMAGES = 8;
 const GPT_IMAGE_SIZES = [
   {
     id: "1024x1024",
     label: "square",
     width: 1024,
     height: 1024,
+    ratio: "1:1",
     orientation: "square",
     recommendedFor: ["general", "fastest", "product", "avatar"],
   },
@@ -27,6 +29,7 @@ const GPT_IMAGE_SIZES = [
     label: "landscape",
     width: 1536,
     height: 1024,
+    ratio: "3:2",
     orientation: "landscape",
     recommendedFor: ["banner", "cover", "scene", "ui"],
   },
@@ -35,6 +38,7 @@ const GPT_IMAGE_SIZES = [
     label: "portrait",
     width: 1024,
     height: 1536,
+    ratio: "2:3",
     orientation: "portrait",
     recommendedFor: ["poster", "infographic", "portrait", "mobile"],
   },
@@ -43,8 +47,187 @@ const GPT_IMAGE_SIZES = [
     label: "automatic",
     width: null,
     height: null,
+    ratio: "auto",
     orientation: "auto",
     recommendedFor: ["let-model-decide"],
+  },
+];
+const COMMON_TARGET_RATIOS = [
+  {
+    ratio: "1:1",
+    status: "native",
+    primarySize: "1024x1024",
+    useCases: ["avatar", "square post", "product shot"],
+    note: "Officially supported directly by GPT Image.",
+  },
+  {
+    ratio: "3:2",
+    status: "native",
+    primarySize: "1536x1024",
+    useCases: ["cover", "landscape scene", "ui mock"],
+    note: "Officially supported landscape ratio.",
+  },
+  {
+    ratio: "2:3",
+    status: "native",
+    primarySize: "1024x1536",
+    useCases: ["poster", "portrait", "infographic"],
+    note: "Officially supported portrait ratio.",
+  },
+  {
+    ratio: "16:9",
+    status: "adapt",
+    primarySize: "1536x1024",
+    useCases: ["video thumbnail", "hero banner", "presentation cover"],
+    note: "Not native. Generate in 3:2 and crop horizontally.",
+  },
+  {
+    ratio: "9:16",
+    status: "adapt",
+    primarySize: "1024x1536",
+    useCases: ["short video cover", "story", "mobile poster"],
+    note: "Not native. Generate in 2:3 and crop vertically.",
+  },
+  {
+    ratio: "4:3",
+    status: "adapt",
+    primarySize: "1536x1024",
+    useCases: ["slides", "older display", "diagram card"],
+    note: "Not native. Generate in 3:2 and crop slightly.",
+  },
+  {
+    ratio: "3:4",
+    status: "adapt",
+    primarySize: "1024x1536",
+    useCases: ["editorial card", "booklet cover", "social portrait"],
+    note: "Not native. Generate in 2:3 and crop slightly.",
+  },
+  {
+    ratio: "4:5",
+    status: "adapt",
+    primarySize: "1024x1536",
+    useCases: ["feed post", "fashion poster", "ecommerce visual"],
+    note: "Not native. Generate in 2:3 and crop top/bottom less aggressively.",
+  },
+  {
+    ratio: "5:4",
+    status: "adapt",
+    primarySize: "1024x1024",
+    useCases: ["gallery card", "product listing", "desktop tile"],
+    note: "Not native. Generate square first, then pad or crop lightly.",
+  },
+  {
+    ratio: "21:9",
+    status: "adapt",
+    primarySize: "1536x1024",
+    useCases: ["cinematic banner", "ultrawide header"],
+    note: "Not native. Generate in 3:2 and crop to panoramic framing.",
+  },
+];
+const NATIVE_SIZE_ENUMS = [
+  {
+    id: "square",
+    nativeSize: "1024x1024",
+    ratio: "1:1",
+    orientation: "square",
+    useCases: ["general", "balanced composition"],
+    note: "Default square output.",
+  },
+  {
+    id: "avatar-square",
+    nativeSize: "1024x1024",
+    ratio: "1:1",
+    orientation: "square",
+    useCases: ["avatar", "profile image", "icon-style portrait"],
+    note: "Use when the subject should stay centered and tightly framed.",
+  },
+  {
+    id: "product-square",
+    nativeSize: "1024x1024",
+    ratio: "1:1",
+    orientation: "square",
+    useCases: ["product card", "ecommerce tile", "catalog image"],
+    note: "Best for centered products with safe margins around edges.",
+  },
+  {
+    id: "logo-square",
+    nativeSize: "1024x1024",
+    ratio: "1:1",
+    orientation: "square",
+    useCases: ["logo concept", "badge", "sticker"],
+    note: "Prefer strong central focus and negative space.",
+  },
+  {
+    id: "cover-landscape",
+    nativeSize: "1536x1024",
+    ratio: "3:2",
+    orientation: "landscape",
+    useCases: ["cover", "hero visual", "feature banner"],
+    note: "General-purpose landscape preset.",
+  },
+  {
+    id: "slide-landscape",
+    nativeSize: "1536x1024",
+    ratio: "3:2",
+    orientation: "landscape",
+    useCases: ["presentation visual", "article cover", "deck section image"],
+    note: "Good base for slides or docs that may crop to 16:9 or 4:3 later.",
+  },
+  {
+    id: "scene-landscape",
+    nativeSize: "1536x1024",
+    ratio: "3:2",
+    orientation: "landscape",
+    useCases: ["environment", "wide scene", "travel visual"],
+    note: "Prefer layered depth and readable left/right composition.",
+  },
+  {
+    id: "ui-landscape",
+    nativeSize: "1536x1024",
+    ratio: "3:2",
+    orientation: "landscape",
+    useCases: ["dashboard mock", "interface concept", "game screen"],
+    note: "Useful when the design needs more lateral layout space.",
+  },
+  {
+    id: "poster-portrait",
+    nativeSize: "1024x1536",
+    ratio: "2:3",
+    orientation: "portrait",
+    useCases: ["poster", "key visual", "art print"],
+    note: "General-purpose vertical preset.",
+  },
+  {
+    id: "infographic-portrait",
+    nativeSize: "1024x1536",
+    ratio: "2:3",
+    orientation: "portrait",
+    useCases: ["infographic", "knowledge card", "structured educational visual"],
+    note: "Leave clear top-to-bottom hierarchy for sections and labels.",
+  },
+  {
+    id: "mobile-portrait",
+    nativeSize: "1024x1536",
+    ratio: "2:3",
+    orientation: "portrait",
+    useCases: ["mobile cover", "story base", "vertical social visual"],
+    note: "A strong base when you may crop toward 9:16 later.",
+  },
+  {
+    id: "fashion-portrait",
+    nativeSize: "1024x1536",
+    ratio: "2:3",
+    orientation: "portrait",
+    useCases: ["fashion editorial", "character portrait", "beauty poster"],
+    note: "Best for full-body or mid-shot subjects with vertical styling.",
+  },
+  {
+    id: "auto",
+    nativeSize: "auto",
+    ratio: "auto",
+    orientation: "auto",
+    useCases: ["unknown framing", "let-model-decide"],
+    note: "Use only when the target layout is not yet decided.",
   },
 ];
 
@@ -221,7 +404,7 @@ async function handleSizes(args) {
   const [subcommand, ...rest] = args;
   const flags = parseFlags(rest);
   if (subcommand && subcommand !== "list") {
-    exitWithError("Usage: sizes list [--orientation portrait|landscape|square|auto] [--json]");
+    exitWithError("Usage: sizes list [--orientation portrait|landscape|square|auto] [--json] [--native-only] [--common-only]");
   }
 
   let sizes = GPT_IMAGE_SIZES;
@@ -233,20 +416,58 @@ async function handleSizes(args) {
     }
   }
 
+  let commonRatios = COMMON_TARGET_RATIOS;
+  let nativeEnums = NATIVE_SIZE_ENUMS;
+  if (flags.orientation) {
+    commonRatios = commonRatios.filter((item) => orientationFromRatio(item.ratio) === String(flags.orientation).toLowerCase());
+    nativeEnums = nativeEnums.filter((item) => item.orientation === String(flags.orientation).toLowerCase());
+  }
+  if (flags.nativeOnly) {
+    commonRatios = [];
+  }
+  if (flags.commonOnly) {
+    sizes = [];
+    nativeEnums = [];
+  }
+
   if (flags.json) {
     console.log(JSON.stringify({
       modelFamily: "gpt-image",
       source: "OpenAI Image API docs",
       checkedAt: "2026-04-23",
-      sizes,
+      nativeSizes: sizes,
+      nativeSizeEnums: nativeEnums,
+      commonTargetRatios: commonRatios,
     }, null, 2));
     return;
   }
 
-  console.log("Supported GPT Image sizes:");
-  for (const item of sizes) {
-    const dimensions = item.id === "auto" ? "model-selected" : `${item.width}x${item.height}`;
-    console.log(`${item.id.padEnd(10)} ${item.orientation.padEnd(10)} ${dimensions.padEnd(14)} ${item.recommendedFor.join(", ")}`);
+  if (sizes.length > 0) {
+    console.log("Official native GPT Image sizes:");
+    for (const item of sizes) {
+      const dimensions = item.id === "auto" ? "model-selected" : `${item.width}x${item.height}`;
+      console.log(`${item.id.padEnd(10)} ${item.ratio.padEnd(6)} ${item.orientation.padEnd(10)} ${dimensions.padEnd(14)} ${item.recommendedFor.join(", ")}`);
+    }
+  }
+
+  if (nativeEnums.length > 0) {
+    if (sizes.length > 0) console.log("");
+    console.log("Native-compatible size enums:");
+    for (const item of nativeEnums) {
+      console.log(`${item.id.padEnd(22)} -> ${item.nativeSize.padEnd(10)} ${item.ratio.padEnd(6)} ${item.note}`);
+      console.log(`                        use: ${item.useCases.join(", ")}`);
+    }
+  }
+
+  if (commonRatios.length > 0) {
+    if (sizes.length > 0 || nativeEnums.length > 0) console.log("");
+    console.log("Mainstream target ratios:");
+    for (const item of commonRatios) {
+      console.log(`${item.ratio.padEnd(6)} ${item.status.padEnd(6)} base=${item.primarySize.padEnd(10)} ${item.note}`);
+      console.log(`         use: ${item.useCases.join(", ")}`);
+    }
+    console.log("");
+    console.log("Legend: native = directly supported by the API; adapt = generate with the nearest native size, then crop/pad.");
   }
 }
 
@@ -315,6 +536,7 @@ async function handleEdit(args) {
 
 function buildImagePayload(flags, settings, prompt, options = {}) {
   validateSize(flags.size);
+  const batchCount = resolveBatchCount(flags);
   const payload = pruneEmpty({
     model: settings.model,
     prompt,
@@ -325,7 +547,7 @@ function buildImagePayload(flags, settings, prompt, options = {}) {
     output_format: flags.outputFormat,
     output_compression: flags.outputCompression ? Number(flags.outputCompression) : undefined,
     response_format: flags.responseFormat,
-    n: flags.n ? Number(flags.n) : undefined,
+    n: batchCount,
     user: flags.user,
   });
   if (options.includePromptOnly) {
@@ -460,7 +682,7 @@ function addFlag(flags, key, value) {
 }
 
 function isBooleanFlag(name) {
-  return new Set(["json", "dryRun", "curl", "help", "version"]).has(name);
+  return new Set(["json", "dryRun", "curl", "help", "version", "nativeOnly", "commonOnly"]).has(name);
 }
 
 function hasFlag(args, name) {
@@ -485,6 +707,24 @@ function validateSize(size) {
   if (!supported.has(String(size))) {
     exitWithError(`Unsupported size "${size}" for GPT Image. Run "gpt-image2 sizes list" to see supported values.`);
   }
+}
+
+function resolveBatchCount(flags) {
+  const raw = flags.batch ?? flags.count ?? flags.n;
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > MAX_BATCH_IMAGES) {
+    exitWithError(`Batch image count must be an integer between 1 and ${MAX_BATCH_IMAGES}. Use --batch <1-${MAX_BATCH_IMAGES}> or --n <1-${MAX_BATCH_IMAGES}>.`);
+  }
+  return value;
+}
+
+function orientationFromRatio(ratio) {
+  if (ratio === "auto") return "auto";
+  const [left, right] = String(ratio).split(":").map(Number);
+  if (!left || !right) return "square";
+  if (left === right) return "square";
+  return left > right ? "landscape" : "portrait";
 }
 
 function endpoint(baseUrl, apiPath) {
@@ -657,7 +897,7 @@ Usage:
   gpt-image2 config use <channel>
   gpt-image2 config list
   gpt-image2 config show [channel]
-  gpt-image2 sizes list [--orientation portrait|landscape|square|auto] [--json]
+  gpt-image2 sizes list [--orientation portrait|landscape|square|auto] [--json] [--native-only] [--common-only]
   gpt-image2 templates list [--json]
   gpt-image2 templates search <query>
   gpt-image2 templates show <id>
@@ -677,13 +917,23 @@ Common options:
   --output-format <value>    Example: png, jpeg, webp
   --output-compression <n>   Compression for supported formats
   --response-format <value>  For gateways that support url or b64_json
-  --n <number>               Number of images
+  --batch <number>           Generate multiple images in one request, max ${MAX_BATCH_IMAGES}
+  --count <number>           Alias of --batch
+  --n <number>               Raw API-style alias of --batch, max ${MAX_BATCH_IMAGES}
   --dry-run                  Print final payload only
   --curl                     Print equivalent curl command only
 
+Sizes output:
+  native sizes              Official API-supported sizes only
+  native enums              More preset labels mapped onto those native sizes
+  mainstream ratios         Common layout targets with crop/pad guidance
+
 Examples:
   gpt-image2 sizes list
+  gpt-image2 sizes list --common-only
+  gpt-image2 sizes list --native-only
   gpt-image2 sizes list --orientation portrait
+  gpt-image2 generate --prompt "Tea packaging concept" --batch 4 --output outputs/tea.png
   gpt-image2 templates list
   gpt-image2 try encyclopedia-card --var topic=咖啡萃取 --output outputs/card.png
   gpt-image2 generate --prompt "A quiet ceramic studio at sunrise" --size 1024x1024
