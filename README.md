@@ -19,6 +19,7 @@ Repository:
 - List templates with `gpt-image2 templates`
 - Query native sizes and ratio guidance with `gpt-image2 sizes`
 - Generate up to 8 images per request with `--batch`
+- Retry once on timeout or transient request failure
 - Inspect payloads with `--dry-run`
 - Export equivalent shell calls with `--curl`
 
@@ -189,6 +190,34 @@ Template-based edit:
 gpt-image2 edit --image input.png --template product-redesign --var audience="urban professionals" --output outputs/redesign.png
 ```
 
+## Prompt Test Cases
+
+You can use these cases to quickly verify your API channel and compare output quality across gateways.
+
+Beauty ecommerce model:
+
+```bash
+gpt-image2 generate --prompt "Photorealistic ecommerce beauty campaign image: an adult professional beauty model holding a premium serum bottle, clean luxury skincare set, soft studio lighting, glossy skin but natural texture, warm beige background, product label area intentionally blank, high-end Tmall/JD style product hero composition, commercial photography, realistic hands, no watermark, no logo" --size 1024x1536 --output outputs/beauty-ecommerce-model.png
+```
+
+Game livestream snapshot:
+
+```bash
+gpt-image2 generate --prompt "Photorealistic live gaming stream room snapshot: an adult streamer at a desk playing a colorful action game on a large monitor, RGB keyboard and mouse, webcam light, microphone arm, chat overlay visible on a side screen but text unreadable, energetic real-life livestream atmosphere, candid handheld photography feel, realistic room clutter, cinematic monitor glow, no brand logos, no watermark" --size 1536x1024 --output outputs/game-livestream-realistic.png
+```
+
+Product packaging batch:
+
+```bash
+gpt-image2 generate --prompt "Minimalist premium tea packaging concept, modern East Asian branding, clean product photography, soft shadows, elegant paper texture, refined typography area left blank, ecommerce-ready hero visual" --size 1024x1024 --batch 4 --output outputs/tea-packaging.png
+```
+
+Educational infographic:
+
+```bash
+gpt-image2 try encyclopedia-card --var topic="coffee brewing" --output outputs/coffee-encyclopedia-card.png
+```
+
 ## For Agents
 
 Use this CLI when an agent needs a compact, repeatable image workflow without writing one-off scripts.
@@ -271,9 +300,20 @@ Common options:
 --model <model>
 --size <size>
 --batch <1-8>
+--timeout-ms <milliseconds>
+--retries <count>
 --dry-run
 --curl
 ```
+
+Timeout and retry defaults:
+
+```bash
+--timeout-ms 300000
+--retries 1
+```
+
+That means one request can wait up to 300 seconds, and a timeout or transient failure is retried once.
 
 ## Configuration
 
@@ -300,6 +340,10 @@ Credential precedence:
 Templates are stored in:
 
 - `references/prompts.json`
+
+For more community prompt inspiration, see:
+
+- [EvoLinkAI/awesome-gpt-image-2-prompts](https://github.com/EvoLinkAI/awesome-gpt-image-2-prompts)
 
 Each template includes:
 

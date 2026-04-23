@@ -19,6 +19,7 @@
 - 用 `gpt-image2 templates` 查看和搜索模板
 - 用 `gpt-image2 sizes` 查询原生尺寸和比例建议
 - 用 `--batch` 单次批量生成最多 8 张图
+- 超时或瞬时失败时默认自动重试 1 次
 - 用 `--dry-run` 检查请求体
 - 用 `--curl` 输出等价 curl 命令
 
@@ -189,6 +190,34 @@ gpt-image2 edit --image input.png --prompt "Keep the product unchanged, replace 
 gpt-image2 edit --image input.png --template product-redesign --var audience=城市白领 --output outputs/redesign.png
 ```
 
+## 生图测试用例
+
+可以用下面这些 case 快速验证 API 渠道是否可用，也可以对比不同网关的生成质量。
+
+美妆模特电商图：
+
+```bash
+gpt-image2 generate --prompt "Photorealistic ecommerce beauty campaign image: an adult professional beauty model holding a premium serum bottle, clean luxury skincare set, soft studio lighting, glossy skin but natural texture, warm beige background, product label area intentionally blank, high-end Tmall/JD style product hero composition, commercial photography, realistic hands, no watermark, no logo" --size 1024x1536 --output outputs/beauty-ecommerce-model.png
+```
+
+游戏直播实拍图：
+
+```bash
+gpt-image2 generate --prompt "Photorealistic live gaming stream room snapshot: an adult streamer at a desk playing a colorful action game on a large monitor, RGB keyboard and mouse, webcam light, microphone arm, chat overlay visible on a side screen but text unreadable, energetic real-life livestream atmosphere, candid handheld photography feel, realistic room clutter, cinematic monitor glow, no brand logos, no watermark" --size 1536x1024 --output outputs/game-livestream-realistic.png
+```
+
+产品包装批量图：
+
+```bash
+gpt-image2 generate --prompt "Minimalist premium tea packaging concept, modern East Asian branding, clean product photography, soft shadows, elegant paper texture, refined typography area left blank, ecommerce-ready hero visual" --size 1024x1024 --batch 4 --output outputs/tea-packaging.png
+```
+
+百科信息图：
+
+```bash
+gpt-image2 try encyclopedia-card --var topic=咖啡萃取 --output outputs/coffee-encyclopedia-card.png
+```
+
 ## 给 Agent 用
 
 当 Agent 需要稳定、可复用的图片工作流，而不是每次临时写脚本时，适合调用这个 CLI。
@@ -271,9 +300,20 @@ gpt-image2 edit --image <file> --prompt <text> [--mask file] [--output file]
 --model <model>
 --size <size>
 --batch <1-8>
+--timeout-ms <毫秒数>
+--retries <次数>
 --dry-run
 --curl
 ```
+
+超时与重试默认值：
+
+```bash
+--timeout-ms 300000
+--retries 1
+```
+
+也就是说，单次请求最长等待 300 秒；如果超时或遇到瞬时请求失败，会自动重试 1 次。
 
 ## 配置文件
 
@@ -300,6 +340,10 @@ GPT_IMAGE2_CONFIG
 模板文件：
 
 - `references/prompts.json`
+
+如果想参考更多社区提示词案例，可以看这个开源项目：
+
+- [EvoLinkAI/awesome-gpt-image-2-prompts](https://github.com/EvoLinkAI/awesome-gpt-image-2-prompts)
 
 每个模板包含：
 

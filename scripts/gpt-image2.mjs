@@ -14,6 +14,8 @@ const DEFAULT_CONFIG_PATH = path.join(os.homedir(), ".gpt-image2", "config.json"
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-image-2";
 const MAX_BATCH_IMAGES = 8;
+const DEFAULT_TIMEOUT_MS = 300_000;
+const DEFAULT_RETRIES = 1;
 const GPT_IMAGE_SIZES = [
   {
     id: "1024x1024",
@@ -476,9 +478,10 @@ async function handleGenerate(args) {
   const settings = resolveSettings(flags);
   const prompt = resolvePrompt(flags);
   const payload = buildImagePayload(flags, settings, prompt);
+  const requestOptions = resolveRequestOptions(flags);
 
   if (flags.dryRun) {
-    console.log(JSON.stringify({ endpoint: endpoint(settings.baseUrl, "/images/generations"), payload }, null, 2));
+    console.log(JSON.stringify({ endpoint: endpoint(settings.baseUrl, "/images/generations"), payload, requestOptions }, null, 2));
     return;
   }
   if (flags.curl) {
@@ -486,11 +489,11 @@ async function handleGenerate(args) {
     return;
   }
 
-  const response = await fetch(endpoint(settings.baseUrl, "/images/generations"), {
+  const response = await fetchWithRetry(endpoint(settings.baseUrl, "/images/generations"), {
     method: "POST",
     headers: buildHeaders(settings, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
-  });
+  }, requestOptions);
   const json = await parseApiResponse(response);
   await saveImages(json, flags.output || defaultOutputPath("image"));
 }
@@ -507,6 +510,7 @@ async function handleEdit(args) {
   const settings = resolveSettings(flags);
   const prompt = resolvePrompt(flags);
   const payload = buildImagePayload(flags, settings, prompt, { includePromptOnly: true });
+  const requestOptions = resolveRequestOptions(flags);
   const fields = { ...payload };
   const files = images.map((file) => ({ field: "image", file }));
   if (flags.mask) files.push({ field: "mask", file: flags.mask });
@@ -516,6 +520,7 @@ async function handleEdit(args) {
       endpoint: endpoint(settings.baseUrl, "/images/edits"),
       fields,
       files: files.map((item) => ({ field: item.field, file: item.file })),
+      requestOptions,
     }, null, 2));
     return;
   }
@@ -525,11 +530,11 @@ async function handleEdit(args) {
   }
 
   const { body, contentType } = buildMultipart(fields, files);
-  const response = await fetch(endpoint(settings.baseUrl, "/images/edits"), {
+  const response = await fetchWithRetry(endpoint(settings.baseUrl, "/images/edits"), {
     method: "POST",
     headers: buildHeaders(settings, { "Content-Type": contentType }),
     body,
-  });
+  }, requestOptions);
   const json = await parseApiResponse(response);
   await saveImages(json, flags.output || defaultOutputPath("edited"));
 }
@@ -719,6 +724,18 @@ function resolveBatchCount(flags) {
   return value;
 }
 
+function resolveRequestOptions(flags) {
+  const timeoutMs = Number(flags.timeoutMs ?? flags.timeout ?? DEFAULT_TIMEOUT_MS);
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
+    exitWithError("Timeout must be a positive integer in milliseconds. Example: --timeout-ms 300000.");
+  }
+  const retries = Number(flags.retries ?? DEFAULT_RETRIES);
+  if (!Number.isInteger(retries) || retries < 0) {
+    exitWithError("Retries must be a non-negative integer. Example: --retries 1.");
+  }
+  return { timeoutMs, retries };
+}
+
 function orientationFromRatio(ratio) {
   if (ratio === "auto") return "auto";
   const [left, right] = String(ratio).split(":").map(Number);
@@ -753,6 +770,46 @@ async function parseApiResponse(response) {
     exitWithError(`API request failed (${response.status} ${response.statusText}): ${JSON.stringify(json, null, 2)}`);
   }
   return json;
+}
+
+async function fetchWithRetry(url, options, retryOptions) {
+  const maxAttempts = retryOptions.retries + 1;
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, options, retryOptions.timeoutMs);
+      if (response.ok || !shouldRetryStatus(response.status) || attempt === maxAttempts) {
+        return response;
+      }
+      const body = await response.text();
+      lastError = new Error(`API request failed (${response.status} ${response.statusText}): ${body || "<empty response>"}`);
+      console.error(`Attempt ${attempt}/${maxAttempts} failed with HTTP ${response.status}; retrying once...`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxAttempts) break;
+      console.error(`Attempt ${attempt}/${maxAttempts} failed: ${error.message}; retrying once...`);
+    }
+  }
+  throw lastError;
+}
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error.name === "AbortError" || String(error.message || "").includes("timed out")) {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function shouldRetryStatus(status) {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
 async function saveImages(response, output) {
@@ -920,6 +977,8 @@ Common options:
   --batch <number>           Generate multiple images in one request, max ${MAX_BATCH_IMAGES}
   --count <number>           Alias of --batch
   --n <number>               Raw API-style alias of --batch, max ${MAX_BATCH_IMAGES}
+  --timeout-ms <number>      Request timeout in milliseconds, default ${DEFAULT_TIMEOUT_MS}
+  --retries <number>         Retry failed/timeout requests, default ${DEFAULT_RETRIES}
   --dry-run                  Print final payload only
   --curl                     Print equivalent curl command only
 
