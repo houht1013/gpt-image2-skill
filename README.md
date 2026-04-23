@@ -2,103 +2,117 @@
   <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a>
 </p>
 
-# GPT Image 2 Skill
+# GPT Image 2 CLI
 
-A lightweight `gpt-image-2` skill and CLI for image generation/editing through OpenAI-compatible APIs.
+A lightweight `gpt-image-2` command-line tool and Codex skill for image generation/editing through OpenAI-compatible APIs.
 
-This project is designed to be:
+Repository:
 
-- Python-free
-- dependency-free on npm packages
-- easy to use from shell-first agent environments
-- friendly for prompt-template experimentation
-- simple to configure across multiple API channels
+- [https://github.com/houht1013/gpt-image2-skill](https://github.com/houht1013/gpt-image2-skill)
 
-It works especially well in:
+## What It Does
 
-- Codex
-- Claude Code
-- OpenClaw
-- other agent runtimes that can execute shell commands
+- Generate images with `gpt-image2 generate`
+- Edit images with `gpt-image2 edit`
+- Try reusable prompt templates with `gpt-image2 try`
+- Manage API channels with `gpt-image2 config`
+- List templates with `gpt-image2 templates`
+- Query native sizes and ratio guidance with `gpt-image2 sizes`
+- Generate up to 8 images per request with `--batch`
+- Inspect payloads with `--dry-run`
+- Export equivalent shell calls with `--curl`
 
-## Why this project
+It is intentionally small:
 
-Many image-generation helpers are either Python-only, too heavyweight, or awkward to reuse inside agent workflows.
+- No Python dependency
+- No third-party npm packages
+- Works well in shell-first agent environments
+- Suitable for Codex, Claude Code, OpenClaw, and human terminal use
 
-This repository keeps the toolchain intentionally small:
+## Install The CLI
 
-- one dependency-free Node.js CLI
-- reusable prompt templates
-- multi-channel config support
-- `dry-run` and `curl` export for debugging
-
-## Features
-
-- `generate` for text-to-image
-- `edit` for image editing
-- `templates list/search/show` for reusable prompt templates
-- `try <template-id>` for quick experimentation
-- `config set/use/list/show` for API channel management
-- `sizes list` for supported resolution lookup
-- `--dry-run` to inspect the final payload
-- `--curl` to print an equivalent curl command
-- batch multi-image generation with `--batch`, up to 8 images
-
-## Installation
-
-### Option 1: Use directly from the repo
+Clone the project and link the `gpt-image2` command globally:
 
 ```bash
 git clone https://github.com/houht1013/gpt-image2-skill.git
 cd gpt-image2-skill
-node scripts/gpt-image2.mjs --help
-```
-
-No `npm install` is required for normal usage.
-
-### Option 2: Link as a local command
-
-```bash
 npm link
 gpt-image2 --help
 ```
 
-### Option 3: Keep it in a shared agent tools directory
-
-This is often the best setup for agent workflows:
+After linking, use `gpt-image2` from any directory:
 
 ```bash
-mkdir -p ~/tools
-cd ~/tools
-git clone https://github.com/houht1013/gpt-image2-skill.git
-node ~/tools/gpt-image2-skill/scripts/gpt-image2.mjs templates list
+gpt-image2 templates list
+gpt-image2 sizes list
+```
+
+No `npm install` is required for normal usage.
+
+### Verify The Link
+
+```bash
+npm bin -g
+```
+
+On Windows PowerShell:
+
+```powershell
+Get-Command gpt-image2
+```
+
+If `gpt-image2` is not recognized, add your global npm bin directory to `PATH`, then restart the terminal.
+
+### Uninstall The Link
+
+```bash
+npm unlink -g gpt-image2-skill
 ```
 
 ## Quick Start
 
-### 1. Check available templates
+### 1. Configure An API Channel
+
+Example with [OPCLab](https://api.opclab.vip), an OpenAI-compatible gateway:
 
 ```bash
-node scripts/gpt-image2.mjs templates list
-node scripts/gpt-image2.mjs templates show encyclopedia-card
+gpt-image2 config set opclab --api-key "YOUR_API_KEY" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
+gpt-image2 config use opclab
+gpt-image2 config show
 ```
 
-### 2. Check supported sizes
+You can also configure the official OpenAI endpoint:
 
 ```bash
-node scripts/gpt-image2.mjs sizes list
-node scripts/gpt-image2.mjs sizes list --orientation portrait
-node scripts/gpt-image2.mjs sizes list --common-only
+gpt-image2 config set openai --api-key "YOUR_OPENAI_API_KEY" --base-url "https://api.openai.com/v1" --model "gpt-image-2"
+gpt-image2 config use openai
 ```
 
-Supported values currently include:
+### 2. Browse Prompt Templates
+
+```bash
+gpt-image2 templates list
+gpt-image2 templates search poster
+gpt-image2 templates show encyclopedia-card
+```
+
+### 3. Check Supported Sizes
+
+```bash
+gpt-image2 sizes list
+gpt-image2 sizes list --native-only
+gpt-image2 sizes list --common-only
+gpt-image2 sizes list --orientation portrait
+```
+
+Native GPT Image sizes:
 
 - `1024x1024`
 - `1536x1024`
 - `1024x1536`
 - `auto`
 
-Under those native sizes, the CLI now also enumerates more practical native-compatible presets, such as:
+The CLI also lists native-compatible presets such as:
 
 - `avatar-square`
 - `product-square`
@@ -112,9 +126,9 @@ Under those native sizes, the CLI now also enumerates more practical native-comp
 - `mobile-portrait`
 - `fashion-portrait`
 
-These are not extra API resolutions. They are named presets mapped onto the officially supported native sizes, so agents and users can choose a framing intention more quickly.
+These presets are not extra API resolutions. They are named usage presets mapped onto native sizes.
 
-The CLI now also prints mainstream target ratios for planning, including:
+The CLI also shows mainstream target ratios for planning:
 
 - `16:9`
 - `9:16`
@@ -124,45 +138,21 @@ The CLI now also prints mainstream target ratios for planning, including:
 - `5:4`
 - `21:9`
 
-These are shown as guidance ratios. They are not all native API sizes. For non-native ratios, the CLI recommends the nearest supported base size plus a crop/pad strategy.
+Non-native ratios include crop/pad guidance.
 
-### 3. Configure an API channel
-
-If you want a ready-to-test OpenAI-compatible gateway example, you can use [OPCLab](https://api.opclab.vip).
-
-Example:
+### 4. Generate One Image
 
 ```bash
-node scripts/gpt-image2.mjs config set opclab \
-  --api-key "YOUR_API_KEY" \
-  --base-url "https://api.opclab.vip/v1" \
-  --model "gpt-image-2"
-
-node scripts/gpt-image2.mjs config use opclab
-node scripts/gpt-image2.mjs config show
+gpt-image2 generate --prompt "A cinematic red panda librarian floating through a glass observatory in the rain, whimsical, rich detail" --size 1024x1024 --output outputs/random-test.png
 ```
 
-You can also use the official OpenAI endpoint or any other compatible gateway.
-
-### 4. Generate an image
+### 5. Generate Multiple Images
 
 ```bash
-node scripts/gpt-image2.mjs generate \
-  --prompt "A cinematic red panda librarian floating through a glass observatory in the rain, whimsical, rich detail" \
-  --size 1024x1024 \
-  --output outputs/random-test.png
+gpt-image2 generate --prompt "Minimalist tea packaging concept, premium, modern East Asian branding" --batch 4 --output outputs/tea-batch.png
 ```
 
-Generate multiple images in one request:
-
-```bash
-node scripts/gpt-image2.mjs generate \
-  --prompt "Minimalist tea packaging concept, premium, modern East Asian branding" \
-  --batch 4 \
-  --output outputs/tea-batch.png
-```
-
-The CLI will save them as:
+The CLI saves multiple outputs with numbered filenames:
 
 ```text
 outputs/tea-batch-01.png
@@ -171,49 +161,88 @@ outputs/tea-batch-03.png
 outputs/tea-batch-04.png
 ```
 
-### 5. Try a prompt template
+Batch aliases:
 
 ```bash
-node scripts/gpt-image2.mjs try encyclopedia-card \
-  --var topic="coffee brewing" \
-  --output outputs/coffee-card.png
+--batch <1-8>
+--count <1-8>
+--n <1-8>
 ```
 
-### 6. Export curl when needed
+The CLI intentionally caps batch generation at 8 images per request to keep agent workflows and local outputs manageable.
+
+### 6. Try A Template
 
 ```bash
-node scripts/gpt-image2.mjs generate \
-  --template city-poster \
-  --var city="Shanghai" \
-  --curl
+gpt-image2 try encyclopedia-card --var topic="coffee brewing" --output outputs/coffee-card.png
 ```
 
-## Agent-Friendly Usage
-
-This CLI is intentionally well suited for agent environments.
-
-### Codex
-
-Use it inside a skill, local workspace, or automation step:
+### 7. Edit An Image
 
 ```bash
-node scripts/gpt-image2.mjs try encyclopedia-card --var topic="tea" --output outputs/card.png
+gpt-image2 edit --image input.png --prompt "Keep the product unchanged, replace the background with a premium warm studio setup" --output outputs/edited.png
 ```
 
-### Claude Code
+Template-based edit:
 
-It works well as a stable shell command because it does not require installing extra Python packages or npm dependencies.
+```bash
+gpt-image2 edit --image input.png --template product-redesign --var audience="urban professionals" --output outputs/redesign.png
+```
 
-### OpenClaw
+## For Agents
 
-It is a good fit as an external image-tool command when you want:
+Use this CLI when an agent needs a compact, repeatable image workflow without writing one-off scripts.
 
-- fast prompt-template selection
-- multi-provider switching
-- curl export for reproducibility
-- local file outputs that downstream tools can reuse
+Recommended agent flow:
 
-## Commands
+1. Run `gpt-image2 templates list` or `gpt-image2 templates search`.
+2. Run `gpt-image2 templates show <id>` to inspect prompt variables.
+3. Run `gpt-image2 sizes list` to choose a native size or target ratio strategy.
+4. Run `gpt-image2 generate`, `gpt-image2 try`, or `gpt-image2 edit`.
+5. Use `--dry-run` before expensive calls.
+6. Use `--curl` when another tool needs a raw shell command.
+
+Agent examples:
+
+```bash
+gpt-image2 templates list
+gpt-image2 sizes list --native-only
+gpt-image2 try encyclopedia-card --var topic="tea brewing" --output outputs/tea-card.png
+gpt-image2 generate --prompt "Premium tea packaging concept" --batch 4 --output outputs/tea-batch.png
+```
+
+Why it works well for agents:
+
+- Stable command interface
+- Clear local file outputs
+- No Python runtime requirement
+- No npm dependency install step
+- Fits Codex, Claude Code, OpenClaw, and shell-first agent runtimes
+
+## For Humans
+
+Use this CLI directly when you want to experiment with prompts, templates, or OpenAI-compatible image gateways from your terminal.
+
+Recommended human flow:
+
+1. Configure a channel with `gpt-image2 config set`.
+2. Confirm it with `gpt-image2 config show`.
+3. Browse templates with `gpt-image2 templates list`.
+4. Try one template with `gpt-image2 try`.
+5. Use `gpt-image2 generate` for direct prompts.
+6. Use `gpt-image2 edit` when you already have an input image.
+
+Human example:
+
+```bash
+gpt-image2 config set opclab --api-key "YOUR_API_KEY" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
+gpt-image2 config use opclab
+gpt-image2 templates list
+gpt-image2 try city-poster --var city="Hangzhou" --output outputs/hangzhou-poster.png
+gpt-image2 generate --prompt "Minimalist tea brand poster, premium, East Asian editorial style" --size 1024x1536 --output outputs/poster.png
+```
+
+## Command Reference
 
 ```bash
 gpt-image2 config set <channel> --api-key <key> [--base-url <url>] [--model <model>]
@@ -233,15 +262,38 @@ gpt-image2 generate --template <id> [--var key=value] [--output file]
 gpt-image2 edit --image <file> --prompt <text> [--mask file] [--output file]
 ```
 
-Batch options:
+Common options:
 
 ```bash
+--channel <name>
+--api-key <key>
+--base-url <url>
+--model <model>
+--size <size>
 --batch <1-8>
---count <1-8>
---n <1-8>
+--dry-run
+--curl
 ```
 
-OpenAI's current image API documentation allows a higher upper bound for `n` in some cases, but this CLI intentionally caps batch generation at 8 images per request to keep outputs manageable in agent workflows and local file handling.
+## Configuration
+
+Default config path:
+
+```text
+~/.gpt-image2/config.json
+```
+
+Override with:
+
+```text
+GPT_IMAGE2_CONFIG
+```
+
+Credential precedence:
+
+1. CLI flags such as `--api-key`
+2. Active configured channel
+3. Environment variables such as `GPT_IMAGE_API_KEY` or `OPENAI_API_KEY`
 
 ## Prompt Templates
 
@@ -264,72 +316,58 @@ Variables use `{{name}}` placeholders and can be overridden with:
 --var key=value
 ```
 
-## Configuration
-
-Default config path:
-
-```text
-~/.gpt-image2/config.json
-```
-
-Override with:
-
-```text
-GPT_IMAGE2_CONFIG
-```
-
-Credential precedence:
-
-1. CLI flags such as `--api-key`
-2. active configured channel
-3. environment variables such as `GPT_IMAGE_API_KEY` or `OPENAI_API_KEY`
-
-## Editing Images
-
-```bash
-node scripts/gpt-image2.mjs edit \
-  --image input.png \
-  --prompt "Keep the product unchanged, replace the background with a premium warm studio setup" \
-  --output outputs/edited.png
-```
-
-Or use a template:
-
-```bash
-node scripts/gpt-image2.mjs edit \
-  --image input.png \
-  --template product-redesign \
-  --var audience="urban professionals" \
-  --output outputs/redesign.png
-```
-
 ## Debugging
 
 Inspect the final payload without calling the API:
 
 ```bash
-node scripts/gpt-image2.mjs generate --template encyclopedia-card --var topic=tea --dry-run
+gpt-image2 generate --template encyclopedia-card --var topic=tea --dry-run
 ```
 
 Print an equivalent curl command:
 
 ```bash
-node scripts/gpt-image2.mjs generate --template city-poster --var city=Chengdu --curl
+gpt-image2 generate --template city-poster --var city=Chengdu --curl
 ```
+
+## Install As A Codex Skill
+
+If you want Codex to discover this project as a reusable skill, install it from GitHub:
+
+```bash
+python "C:\Users\%USERNAME%\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py" --repo houht1013/gpt-image2-skill --path . --name gpt-image2
+```
+
+Installed destination:
+
+```text
+~/.codex/skills/gpt-image2
+```
+
+Restart Codex after installation.
+
+## Source Usage And Development
+
+The preferred user-facing command is `gpt-image2`. If you do not want to link the CLI globally, you can run the source script directly from the repository:
+
+```bash
+git clone https://github.com/houht1013/gpt-image2-skill.git
+cd gpt-image2-skill
+node scripts/gpt-image2.mjs --help
+node scripts/gpt-image2.mjs templates list
+```
+
+For active development, `npm link` is useful because changes to `scripts/gpt-image2.mjs` take effect immediately through the global `gpt-image2` command.
 
 ## Recommended Gateway Example
 
 If you want a simple OpenAI-compatible endpoint for testing or agent workflows, take a look at [OPCLab](https://api.opclab.vip).
 
-Example channel setup:
-
 ```bash
-node scripts/gpt-image2.mjs config set opclab --api-key "YOUR_API_KEY" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
-node scripts/gpt-image2.mjs config use opclab
+gpt-image2 config set opclab --api-key "YOUR_API_KEY" --base-url "https://api.opclab.vip/v1" --model "gpt-image-2"
+gpt-image2 config use opclab
 ```
 
 ## Chinese Documentation
-
-For the Chinese guide, see:
 
 - [README.zh-CN.md](./README.zh-CN.md)
