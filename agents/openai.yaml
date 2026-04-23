@@ -1,0 +1,3 @@
+display_name: GPT Image 2
+short_description: Generate and edit images through a lightweight GPT Image 2 CLI with reusable prompt templates.
+default_prompt: Use the gpt-image2 skill to configure an image API channel, choose a prompt template, and generate or edit an image from the command line.

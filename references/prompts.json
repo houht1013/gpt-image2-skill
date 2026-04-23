@@ -1,0 +1,105 @@
+[
+  {
+    "id": "encyclopedia-card",
+    "title": "Modular science encyclopedia card",
+    "lang": "zh",
+    "tags": ["infographic", "education", "poster", "vertical"],
+    "size": "1024x1536",
+    "description": "适合把任意主题做成可收藏的科普百科信息图。",
+    "variables": {
+      "topic": "咖啡萃取"
+    },
+    "prompt": "请根据「{{topic}}」生成一张高质量竖版科普百科图。画面需要兼具图鉴感、百科感、信息结构感和收藏感：包含清晰主题主视觉、局部细节放大、圆角模块化信息区、标题层级、重点标签、简洁但丰富的知识内容，以及评分卡或 Top 5 要点。栏目可围绕基础档案、形成机制、结构组成、使用条件、维护建议、优缺点、风险注意事项自动组合。视觉为浅色干净背景、柔和配色、轻阴影、精致小图标、整洁排版，信息密度高但不拥挤，像真正可发布和系列化生产的百科卡片。"
+  },
+  {
+    "id": "analog-film-portrait",
+    "title": "Soft analog film portrait",
+    "lang": "en",
+    "tags": ["portrait", "photography", "film", "vertical"],
+    "size": "1024x1536",
+    "description": "A realistic adult portrait with gentle analog film atmosphere.",
+    "variables": {
+      "subject": "an adult ceramic artist",
+      "setting": "a bright studio beside a large window"
+    },
+    "prompt": "9:16 vertical analog 35mm film portrait of {{subject}} in {{setting}}. Soft diffused natural window light, airy pastel tones, low contrast, gentle highlight bloom, subtle film grain, realistic skin and fabric texture, quiet candid posture, clean background, intimate editorial composition, eye-level framing, shallow depth of field, understated everyday mood, no heavy retouching, no watermark."
+  },
+  {
+    "id": "city-poster",
+    "title": "Vintage city travel poster",
+    "lang": "en",
+    "tags": ["poster", "travel", "illustration", "city"],
+    "size": "1024x1536",
+    "description": "Creates a tasteful travel poster for a city or district.",
+    "variables": {
+      "city": "Boston",
+      "season": "spring"
+    },
+    "prompt": "A refined vertical travel poster for {{city}} in {{season}}, combining vintage printmaking charm with modern editorial layout. Include iconic architecture, local street details, soft atmospheric light, restrained colors, elegant negative space, subtle paper texture, and a clear poster hierarchy. The composition should feel collectible, cinematic, and suitable for a boutique tourism campaign."
+  },
+  {
+    "id": "product-redesign",
+    "title": "Professional product ad redesign",
+    "lang": "zh",
+    "tags": ["product", "ad", "design", "editing"],
+    "size": "1024x1536",
+    "description": "适合配合 edit 命令，把原商品图改成更高级的广告视觉。",
+    "variables": {
+      "audience": "年轻城市通勤人群",
+      "style": "极简高级、自然可信"
+    },
+    "prompt": "请保留原图商品的核心外观、比例、材质和可识别细节，从专业广告设计师视角重新设计画面。目标受众是{{audience}}，整体风格为{{style}}。优化构图、背景、光影、色彩、层次和留白，让商品成为明确视觉焦点；加入少量有助于理解卖点的场景元素，但避免杂乱、廉价感、过度文字和虚假功能暗示。输出应像品牌官网或高端电商首图。"
+  },
+  {
+    "id": "character-sheet",
+    "title": "Consistent character sheet",
+    "lang": "en",
+    "tags": ["character", "sheet", "concept-art", "game"],
+    "size": "1536x1024",
+    "description": "Generates a concept-art sheet with consistent identity across views.",
+    "variables": {
+      "character": "a desert courier with solar-powered gear",
+      "style": "stylized realistic game concept art"
+    },
+    "prompt": "A clean character design sheet for {{character}}, in {{style}}. Show one consistent identity across front view, side view, three-quarter view, close-up face detail, key props, material callouts, and a small palette strip. Use neutral studio lighting, readable silhouettes, precise costume construction, practical accessories, labels with minimal readable design blocks, and a professional concept-art layout."
+  },
+  {
+    "id": "ui-status-screen",
+    "title": "Game status UI from image",
+    "lang": "zh",
+    "tags": ["ui", "game", "editing", "screenshot"],
+    "size": "1536x1024",
+    "description": "适合配合 edit 命令，把上传图片改造成游戏状态界面。",
+    "variables": {
+      "language": "中文",
+      "genre": "轻科幻角色扮演游戏"
+    },
+    "prompt": "请基于输入图片制作一个信息量丰富的{{genre}}状态界面，界面语言为{{language}}。保留原图主体的可识别特征，并围绕主体设计头像区、属性面板、技能模块、装备栏、状态标签、等级和稀有度展示。UI 要有清晰视觉层级、精致图标、半透明面板、微弱发光边框和高完成度游戏截图质感，布局复杂但不混乱。"
+  },
+  {
+    "id": "ink-landscape-poster",
+    "title": "Modern Chinese ink landscape poster",
+    "lang": "zh",
+    "tags": ["ink", "poster", "landscape", "vertical"],
+    "size": "1024x1536",
+    "description": "新中式水墨山水海报模板。",
+    "variables": {
+      "title": "东方美学",
+      "scene": "春日清晨的群山与湖面"
+    },
+    "prompt": "生成一张竖版新中式水墨山水海报，主题为「{{scene}}」。采用东方极简美学，大面积留白，低饱和青绿、雾蓝、淡灰与浅墨色调。画面有层叠山体、晨雾、平静湖面倒影、一叶小舟和少量飞鸟，冷暖对比克制，空间纵深清晰。顶部加入竖排手写书法标题「{{title}}」，笔触自然、有墨韵和飞白，不要字体感。整体融合传统水墨与现代海报设计，安静、空灵、高级。"
+  },
+  {
+    "id": "fictional-album-cover",
+    "title": "Fictional music album cover",
+    "lang": "en",
+    "tags": ["album", "fashion", "music", "cover"],
+    "size": "1024x1024",
+    "description": "Creates a stylish fictional album cover without referencing real artists.",
+    "variables": {
+      "group": "a fictional synth-pop trio",
+      "album": "Neon Rain"
+    },
+    "prompt": "Square fashion album cover for {{group}}, album title '{{album}}'. Create a cohesive fictional identity with editorial wardrobe, dramatic but tasteful lighting, reflective surfaces, strong typography area, cinematic color palette, and premium magazine-cover composition. Avoid copying real artists or logos; make the design original, polished, and ready for streaming-platform artwork."
+  }
+]

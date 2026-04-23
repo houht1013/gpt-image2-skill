@@ -1,0 +1,14 @@
+{
+  "name": "gpt-image2-skill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Codex skill and dependency-free Node.js CLI for GPT Image 2 prompt templates and OpenAI-compatible image APIs.",
+  "type": "module",
+  "bin": {
+    "gpt-image2": "scripts/gpt-image2.mjs"
+  },
+  "scripts": {
+    "check": "node --check scripts/gpt-image2.mjs",
+    "smoke": "node scripts/gpt-image2.mjs sizes list && node scripts/gpt-image2.mjs templates list && node scripts/gpt-image2.mjs generate --template encyclopedia-card --var topic=茶叶 --dry-run"
+  }
+}
